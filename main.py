@@ -97,3 +97,41 @@ class Limpiador:
             asunto = self._decodificar_asunto(mensaje) if mensaje else None
             self._mover_a_papelera(msg_id, asunto)
 
+
+if __name__ == "__main__":
+    import json
+
+    with open("config.json") as f:
+        config = json.load(f)
+
+    limpiador = Limpiador(
+        servidor=config["conexion"]["servidor"],
+        use_ssl=config["conexion"]["ssl"],
+        usuario=config["conexion"]["usuario"],
+        clave=config["conexion"]["clave"],
+        carpeta=config["conexion"]["carpeta_entrada"],
+        papelera=config["conexion"]["papelera"]
+    )
+
+    try:
+        limpiador.conectar()
+
+        print("Borrando por remitente")
+        for remitente in config["filtros"]["remitentes"]:
+            limpiador.borrar_por_remitente(remitente)
+
+        print("Borrando por asunto")
+        asuntos = [] # Optimización disponible: prealocación
+        for asunto in config["filtros"]["asuntos"]:
+            if asunto["ignorar-mayusculas-minusculas"]:
+                asuntos.append(
+                    re.compile(asunto["filtro"], re.IGNORECASE)
+                )
+            else:
+                asuntos.append(
+                    re.compile(asunto["filtro"])
+                )
+        limpiador.borrar_por_asuntos(asuntos)
+
+    finally:
+        limpiador.cerrar()
