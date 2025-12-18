@@ -21,6 +21,7 @@ class Limpiador:
         self.papelera = papelera
         self.use_ssl = use_ssl
         self.mail = None
+        self.cache = {}
 
     # Conexión
     def conectar(self):
@@ -52,9 +53,13 @@ class Limpiador:
         )
 
     def _obtener_mensaje(self, msg_id):
-        status, msg_data = self.mail.fetch(msg_id, "(BODY.PEEK[])")
-        if status != "OK":
-            return None
+        if msg_id in self.cache.keys():
+            msg_data = self.cache[msg_id]
+        else:
+            status, msg_data = self.mail.fetch(msg_id, "(BODY.PEEK[])")
+            if status != "OK":
+                return None
+            self.cache[msg_id] = msg_data
 
         raw_email = msg_data[0][1]
         return email.message_from_bytes(raw_email)
@@ -64,6 +69,10 @@ class Limpiador:
             asunto = self._decodificar_asunto(self._obtener_mensaje(msg_id))
 
         print(f"Moviendo a la papelera: {asunto}")
+
+        if msg_id in self.cache.keys():
+            del self.cache[msg_id]
+
         self.mail.copy(msg_id, self.papelera)
         self.mail.store(msg_id, "+FLAGS", "\\Deleted")
 
