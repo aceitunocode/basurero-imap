@@ -63,6 +63,33 @@ class Limpiador:
 
         raw_email = msg_data[0][1]
         return email.message_from_bytes(raw_email)
+    
+    @staticmethod
+    def _decodificar_contenido(mensaje):
+        if mensaje.is_multipart():
+            fragmentos = []
+            for parte in mensaje.walk():
+                content_disposition = str(parte.get("Content-Disposition"))
+
+                # Ignorar adjuntos
+                if "attachment" in content_disposition:
+                    continue
+
+                charset = parte.get_content_charset() or "utf-8"
+                try:
+                    fragmentos.append(parte.get_payload(decode=True).decode(
+                        charset, errors="replace"
+                    ))
+                except:
+                    continue
+            contenido = "\n".join(fragmentos)
+        else:
+            charset = mensaje.get_content_charset() or "utf-8"
+            contenido = mensaje.get_payload(decode=True).decode(
+                charset, errors="replace"
+            )
+
+        return contenido
 
     def _mover_a_papelera(self, msg_id, asunto=None):
         if not asunto:
