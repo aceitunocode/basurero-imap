@@ -105,7 +105,9 @@ class Limpiador:
 
     # Funciones públicas
     def borrar_por_asuntos(self, patrones: list[re.Pattern]):
-        status, data = self.mail.search(None, "ALL")
+        status, data = self.mail.search(None, "UNDELETED")
+        # Como normalmente se ejecuta el borrado por asuntos después del borrado por remitente, se usa
+        # "UNDELETED" en vez de "ALL" para no volver a pasar por correos que ya hayan sido marcados para eliminar
         if status != "OK":
             print("No se pudo buscar correos")
             return
