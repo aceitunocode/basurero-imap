@@ -1,2 +1,5 @@
 config.json
 /prototipo
+__pycache__
+.build/
+dist/

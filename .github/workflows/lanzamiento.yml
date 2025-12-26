@@ -1,0 +1,32 @@
+name: Build y subir ZIP a la release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    env:
+      VERSION: ${{ github.event.release.tag_name }}
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ejecutar build
+        run: python build/build.py
+
+      - name: Subir ZIP versionado a la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/basurero-imap_${{ env.VERSION }}.zip
