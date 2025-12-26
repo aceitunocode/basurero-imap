@@ -25,6 +25,7 @@ class Limpiador:
 
     # Conexión
     def conectar(self):
+        """Crea la conexión con el servidor de correo"""
         if self.use_ssl:
             self.mail = imaplib.IMAP4_SSL(self.servidor)
         else:
@@ -37,6 +38,9 @@ class Limpiador:
             raise RuntimeError(f"No se pudo seleccionar la carpeta {self.carpeta}")
 
     def cerrar(self):
+        """Manda las órdenes de eliminación de correo y cierra sesión.
+        
+        AVISO: Si la conexión se cierra sin usar esta función, el inicio de sesión por IMAP quedará bloqueado hasta que el servidor cierre la sesión por inactividad"""
         if self.mail:
             self.mail.expunge()
             self.mail.close()
@@ -44,13 +48,17 @@ class Limpiador:
             self.mail = None
 
     # Utilidades
-    @staticmethod
-    def _decodificar_asunto(mensaje):
-        subject = decode_header(mensaje.get("Subject", ""))
-        return "".join(
-            part.decode(charset or "utf-8") if isinstance(part, bytes) else part
-            for part, charset in subject
-        )
+    def _mover_a_papelera(self, msg_id, asunto=None):
+        if not asunto:
+            asunto = self._decodificar_asunto(self._obtener_mensaje(msg_id))
+
+        print(f"Moviendo a la papelera: {asunto}")
+
+        if msg_id in self.cache.keys():
+            del self.cache[msg_id]
+
+        self.mail.copy(msg_id, self.papelera)
+        self.mail.store(msg_id, "+FLAGS", "\\Deleted")
 
     def _obtener_mensaje(self, msg_id):
         if msg_id in self.cache.keys():
@@ -63,6 +71,15 @@ class Limpiador:
 
         raw_email = msg_data[0][1]
         return email.message_from_bytes(raw_email)
+    
+    ## Decodificadores
+    @staticmethod
+    def _decodificar_asunto(mensaje):
+        subject = decode_header(mensaje.get("Subject", ""))
+        return "".join(
+            part.decode(charset or "utf-8") if isinstance(part, bytes) else part
+            for part, charset in subject
+        )
     
     @staticmethod
     def _decodificar_contenido(mensaje):
@@ -91,20 +108,9 @@ class Limpiador:
 
         return contenido
 
-    def _mover_a_papelera(self, msg_id, asunto=None):
-        if not asunto:
-            asunto = self._decodificar_asunto(self._obtener_mensaje(msg_id))
-
-        print(f"Moviendo a la papelera: {asunto}")
-
-        if msg_id in self.cache.keys():
-            del self.cache[msg_id]
-
-        self.mail.copy(msg_id, self.papelera)
-        self.mail.store(msg_id, "+FLAGS", "\\Deleted")
-
     # Funciones públicas
     def borrar_por_asuntos(self, patrones: list[re.Pattern]):
+        """Elimina todos los correos que cumplan al menos una de las expresiones regulares en la lista"""
         status, data = self.mail.search(None, "UNDELETED")
         # Como normalmente se ejecuta el borrado por asuntos después del borrado por remitente, se usa
         # "UNDELETED" en vez de "ALL" para no volver a pasar por correos que ya hayan sido marcados para eliminar
@@ -126,6 +132,7 @@ class Limpiador:
 
     def borrar_por_remitente(self, remitente: str):
         status, data = self.mail.search(None, "FROM", f'"{remitente}"')
+        # Debido a como funciona IMAP, solo se buscan correos que existan dentro de la carpeta seleccionada (self.carpeta)
         if status != "OK":
             print("No se pudo buscar correos")
             return
