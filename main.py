@@ -150,7 +150,7 @@ class Limpiador:
 if __name__ == "__main__":
     import json
 
-    with open("config.json") as f:
+    with open("config.json", "r", encoding="utf-8") as f:
         config = json.load(f)
 
     limpiador = Limpiador(
