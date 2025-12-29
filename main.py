@@ -21,7 +21,7 @@ class Limpiador:
         self.papelera = papelera
         self.use_ssl = use_ssl
         self.mail = None
-        self.cache = {}
+        #self.cache = {}
 
     # Conexión
     def conectar(self):
@@ -50,24 +50,28 @@ class Limpiador:
     # Utilidades
     def _mover_a_papelera(self, msg_id, asunto=None):
         if not asunto:
-            asunto = self._decodificar_asunto(self._obtener_mensaje(msg_id))
+            asunto = self._decodificar_asunto(self._obtener_mensaje(msg_id, "HEADER"))
 
         print(f"Moviendo a la papelera: {asunto}")
 
-        if msg_id in self.cache.keys():
-            del self.cache[msg_id]
+        #if msg_id in self.cache.keys():
+        #    del self.cache[msg_id]
 
         self.mail.copy(msg_id, self.papelera)
         self.mail.store(msg_id, "+FLAGS", "\\Deleted")
 
-    def _obtener_mensaje(self, msg_id):
-        if msg_id in self.cache.keys():
-            msg_data = self.cache[msg_id]
-        else:
-            status, msg_data = self.mail.fetch(msg_id, "(BODY.PEEK[])")
-            if status != "OK":
-                return None
-            self.cache[msg_id] = msg_data
+    def _obtener_mensaje(self, msg_id, parte = ""):
+        #if msg_id in self.cache.keys():
+        #    msg_data = self.cache[msg_id]
+        #else:
+
+        status, msg_data = self.mail.fetch(msg_id, f"(BODY.PEEK[{parte}])")
+        # Se usa parte = "TEXT" para el cuerpo y parte = "HEADER" para el remitente y el asunto.
+        # Esto evita la descarga de archivos adjuntos que no se analizan.
+        if status != "OK":
+            return None
+
+        #    self.cache[msg_id] = msg_data
 
         raw_email = msg_data[0][1]
         return email.message_from_bytes(raw_email)
@@ -119,7 +123,7 @@ class Limpiador:
             return
 
         for msg_id in data[0].split():
-            mensaje = self._obtener_mensaje(msg_id)
+            mensaje = self._obtener_mensaje(msg_id, "HEADER")
             if not mensaje:
                 continue
 
@@ -138,7 +142,7 @@ class Limpiador:
             return
 
         for msg_id in data[0].split():
-            mensaje = self._obtener_mensaje(msg_id)
+            mensaje = self._obtener_mensaje(msg_id, "HEADER")
             asunto = self._decodificar_asunto(mensaje) if mensaje else None
             self._mover_a_papelera(msg_id, asunto)
 
