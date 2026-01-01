@@ -67,3 +67,10 @@ En el filtrado por asunto los elementos en la lista son objetos, no cadenas de t
 ]
 ```
 > Este filtro elimina todos los correos que tengan en su asunto `sorteo`, `SORTEO`, `SoRtEo`, etc.
+
+# Licencia
+
+Este proyecto es software libre y está licenciado bajo la **Licencia Pública General de GNU, versión 3 (GPL v3)**.  
+Puedes redistribuirlo y/o modificarlo bajo los términos de dicha licencia.  
+Consulta el archivo [LICENSE](LICENSE) para ver el texto completo.
+
