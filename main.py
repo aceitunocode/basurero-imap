@@ -31,7 +31,10 @@ class Limpiador:
         else:
             self.mail = imaplib.IMAP4(self.servidor)
 
-        self.mail.login(self.usuario, self.clave)
+        try:
+            self.mail.login(self.usuario, self.clave)
+        except Exception as e:
+            raise RuntimeError(f"No se pudo conectar al servidor. Motivo: {e}")
 
         status, _ = self.mail.select(self.carpeta)
         if status != "OK":
@@ -39,7 +42,7 @@ class Limpiador:
 
     def cerrar(self):
         """Manda las órdenes de eliminación de correo y cierra sesión.
-        
+
         AVISO: Si la conexión se cierra sin usar esta función, el inicio de sesión por IMAP quedará bloqueado hasta que el servidor cierre la sesión por inactividad"""
         if self.mail:
             self.mail.expunge()
@@ -75,7 +78,7 @@ class Limpiador:
 
         raw_email = msg_data[0][1]
         return email.message_from_bytes(raw_email)
-    
+
     ## Decodificadores
     @staticmethod
     def _decodificar_asunto(mensaje):
@@ -84,7 +87,7 @@ class Limpiador:
             part.decode(charset or "utf-8") if isinstance(part, bytes) else part
             for part, charset in subject
         )
-    
+
     @staticmethod
     def _decodificar_contenido(mensaje):
         if mensaje.is_multipart():
@@ -164,23 +167,27 @@ if __name__ == "__main__":
 
     try:
         limpiador.conectar()
+    except Exception as e:
+        print(e)
+    else:
+        try:
 
-        print("Borrando por remitente")
-        for remitente in config["filtros"]["remitentes"]:
-            limpiador.borrar_por_remitente(remitente)
+            print("Borrando por remitente")
+            for remitente in config["filtros"]["remitentes"]:
+                limpiador.borrar_por_remitente(remitente)
 
-        print("Borrando por asunto")
-        asuntos = [] # Optimización disponible: prealocación
-        for asunto in config["filtros"]["asuntos"]:
-            if asunto["ignorar-mayusculas-minusculas"]:
-                asuntos.append(
-                    re.compile(asunto["filtro"], re.IGNORECASE)
-                )
-            else:
-                asuntos.append(
-                    re.compile(asunto["filtro"])
-                )
-        limpiador.borrar_por_asuntos(asuntos)
+            print("Borrando por asunto")
+            asuntos = [] # Optimización disponible: prealocación
+            for asunto in config["filtros"]["asuntos"]:
+                if asunto["ignorar-mayusculas-minusculas"]:
+                    asuntos.append(
+                        re.compile(asunto["filtro"], re.IGNORECASE)
+                    )
+                else:
+                    asuntos.append(
+                        re.compile(asunto["filtro"])
+                    )
+            limpiador.borrar_por_asuntos(asuntos)
 
-    finally:
-        limpiador.cerrar()
+        finally:
+            limpiador.cerrar()
