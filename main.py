@@ -26,12 +26,12 @@ class Limpiador:
     # Conexión
     def conectar(self):
         """Crea la conexión con el servidor de correo"""
-        if self.use_ssl:
-            self.mail = imaplib.IMAP4_SSL(self.servidor)
-        else:
-            self.mail = imaplib.IMAP4(self.servidor)
-
         try:
+            if self.use_ssl:
+                self.mail = imaplib.IMAP4_SSL(self.servidor)
+            else:
+                self.mail = imaplib.IMAP4(self.servidor)
+
             self.mail.login(self.usuario, self.clave)
         except Exception as e:
             raise RuntimeError(f"No se pudo conectar al servidor. Motivo: {e}")
