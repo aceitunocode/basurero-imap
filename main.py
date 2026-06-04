@@ -83,10 +83,25 @@ class Limpiador:
     @staticmethod
     def _decodificar_asunto(mensaje):
         subject = decode_header(mensaje.get("Subject", ""))
-        return "".join(
-            part.decode(charset or "utf-8") if isinstance(part, bytes) else part
-            for part, charset in subject
-        )
+
+        partes = []
+
+        for part, charset in subject:
+            if isinstance(part, bytes):
+
+                # Algunos correos usan este charset inválido
+                if not charset or charset.lower() == "unknown-8bit":
+                    charset = "utf-8"
+
+                try:
+                    partes.append(part.decode(charset, errors="replace"))
+                except LookupError:
+                    # Charset realmente desconocido
+                    partes.append(part.decode("utf-8", errors="replace"))
+            else:
+                partes.append(part)
+
+        return "".join(partes)
 
     @staticmethod
     def _decodificar_contenido(mensaje):
