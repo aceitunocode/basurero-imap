@@ -44,6 +44,7 @@ Si quieres usar este script para filtrar basura de `BUZONinfoUGR`, rellena esta 
     },
     "filtros":{
         "remitentes": [],
+        "destinatarios": [],
         "asuntos": []
     }
 }
@@ -57,6 +58,16 @@ El filtrado por remitente elimina todos los correos que vengan de las direccione
     "email3@ejemplo.com"
 ]
 ```
+## Filtrado por destinatario
+El filtrado por destinatario elimina todos los correos que vayan dirigidos a las direcciones de correo especificadas (tanto correo directo como CC).
+```json
+"destinatarios": [
+    "email1@ejemplo.com",
+    "email2@ejemplo.com",
+    "email3@ejemplo.com"
+]
+```
+
 ## Filtrado por asunto
 En el filtrado por asunto los elementos en la lista son objetos, no cadenas de texto. Estos objetos tendrán 2 propiedades:
 - `filtro`: expresión regular de python que se busca en el asunto (puede ser una simple palabra clave, por ejemplo "sorteo").

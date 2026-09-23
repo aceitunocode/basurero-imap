@@ -164,6 +164,21 @@ class Limpiador:
             asunto = self._decodificar_asunto(mensaje) if mensaje else None
             self._mover_a_papelera(msg_id, asunto)
 
+    def borrar_por_destinatario(self, destinatario: str):
+        status, data = self.mail.search(
+            None,
+            "OR",
+            "TO", f'"{destinatario}"',
+            "CC", f'"{destinatario}"'
+        )
+
+        if status != "OK":
+            print("No se pudo buscar correos")
+            return
+
+        for msg_id in data[0].split():
+            self._mover_a_papelera(msg_id)
+
 
 if __name__ == "__main__":
     import json
@@ -190,6 +205,10 @@ if __name__ == "__main__":
             print("Borrando por remitente")
             for remitente in config["filtros"]["remitentes"]:
                 limpiador.borrar_por_remitente(remitente)
+
+            print("Borrando por destinatarios")
+            for destinatario in config["filtros"]["destinatarios"]:
+                limpiador.borrar_por_destinatario(destinatario)
 
             print("Borrando por asunto")
             asuntos = [] # Optimización disponible: prealocación
